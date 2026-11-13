@@ -15,6 +15,11 @@ This is a small reading and parser-development aid, not a certified implementati
 
 An 835 is remittance data; changing its extension to PDF or CSV does not convert it. The figures below are expectations for these teaching files, not a claim about any viewer's displayed totals.
 
+
+## Worked tutorial
+
+[Read an 835 without double-counting: a two-claim walkthrough](https://focuscarellc.github.io/visera-synthetic-835-examples/?utm_source=github-samples&utm_medium=referral&utm_campaign=growth-20261113) develops a separate synthetic example, related claim/adjustment tables and three checks for payment totals. The static repository documentation discloses AI assistance and Visera affiliation; its canonical points to the companion Visera reading guide.
+
 ## Shapes and expected amounts
 
 Amounts are USD for this exercise. `manifest.json` is the machine-readable expected result.
