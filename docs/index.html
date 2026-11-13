@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Read an 835 without double-counting: a two-claim walkthrough | Visera 835 Notes</title><meta name="description" content="A worked synthetic 835 example showing claim and adjustment tables, patient responsibility, and why flattened exports can double-count payments."><link rel="canonical" href="https://viseraapp.com/guides/how-to-read-an-835-era-file"><meta property="og:type" content="article"><meta property="og:title" content="Read an 835 without double-counting: a two-claim walkthrough"><style>body{margin:0;background:#fff;color:#172521;font:18px/1.7 system-ui,sans-serif}main{max-width:820px;margin:auto;padding:36px 24px 80px}header{border-bottom:1px solid #d9e3de;padding-bottom:28px;margin-bottom:30px}h1{font-size:clamp(30px,5vw,44px);line-height:1.15;letter-spacing:-.025em}h2{font-size:27px;line-height:1.3;margin-top:44px}a{color:#006d50;text-underline-offset:3px}pre{padding:18px;background:#f2f6f4;overflow:auto;border:1px solid #d9e3de;border-radius:6px;font-size:14px;line-height:1.6}code{font-family:ui-monospace,monospace}table{display:block;border-collapse:collapse;overflow:auto;font-size:15px}td,th{border:1px solid #d9e3de;padding:9px 12px;text-align:left}th{background:#f2f6f4}footer{border-top:1px solid #d9e3de;margin-top:42px;padding-top:20px;font-size:15px}.eyebrow{font-size:15px;color:#526a60}</style></head><body><main><header><p class="eyebrow">Visera 835 Notes · Synthetic examples and parser reading notes</p><h1>Read an 835 without double-counting: a two-claim walkthrough</h1></header><p><em>By Visera / Jovanie Rosario, Focus Care LLC. I am affiliated with the viewer mentioned below. This article was drafted with AI assistance and checked against the linked references; its numbers and claim identifiers are invented.</em></p>
+<p>An 835 reader can produce a neat table and still leave you with the wrong total. A common trap is to combine claim totals, service amounts and adjustment detail as though every number were an additional transaction.</p>
+<p>A useful first exercise is to define what a small remittance excerpt means before trying to convert it into rows. Here is a two-claim example you can inspect in a text editor, followed by three checks that keep its meaning intact.</p>
+<p>This is a teaching fragment, not a complete X12 transaction or a payer submission. It omits envelopes, payment information and other required context. No patient, payer or provider information comes from a real transaction. Do not upload this fragment expecting a complete-file parser to accept it.</p>
+<h2>Build a small example with an answer you can check</h2>
+<p>In this fragment, <code>*</code> separates elements and <code>~</code> ends each segment. These are the delimiters chosen for this example, not a rule to hard-code for every X12 file.</p>
+<pre><code class="language-text">CLP*VISERA-EXAMPLE-A*1*125*90*10*12*SYNTHETIC-A~
+CAS*CO*45*25~
+CAS*PR*1*10~
+CLP*VISERA-EXAMPLE-B*1*80*0*0*12*SYNTHETIC-B~
+CAS*CO*29*80~
+</code></pre>
+<p>Read the two <code>CLP</code> segments as the starts of two claim records. In each one, the claim reference follows the segment identifier, then the status, charge, payment and patient-responsibility amounts. <code>SYNTHETIC-A</code> and <code>SYNTHETIC-B</code> are invented payer claim control references.</p>
+<p>The first claim reports a $125 charge and $90 paid. Its adjustment detail has $25 under CO/45 and $10 under PR/1. The second reports an $80 charge and no payment, with an $80 CO/29 adjustment.</p>
+<p>Both use claim status1, processed as primary. “Processed” does not mean “paid”: a processed claim can have zero payment. X12 limits status4 to an unrecognized patient/subscriber when the claim was not forwarded, so status4 is not a generic marker for a filing-limit denial. <a href="https://x12.org/resources/requests-for-interpretation/rfi-1423-835-clp02-claim-status-code-4">X12's official clarification</a>.</p>
+<p>The field roles are documented in <a href="https://www.cms.gov/medicare/billing/electronicbillingeditrans/downloads/835-flatfile.pdf">CMS's 835 field reference</a>. The fragment is deliberately narrow: it illustrates claim-level adjustments, not every possible claim status, benefit arrangement or service-line layout.</p>
+<p>Before building a report, write the expected claim table:</p>
+<table>
+<thead>
+<tr>
+<th>Claim</th>
+<th style="text-align:right">Charge</th>
+<th style="text-align:right">Payment</th>
+<th style="text-align:right">Reported patient responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VISERA-EXAMPLE-A</td>
+<td style="text-align:right">$125</td>
+<td style="text-align:right">$90</td>
+<td style="text-align:right">$10</td>
+</tr>
+<tr>
+<td>VISERA-EXAMPLE-B</td>
+<td style="text-align:right">$80</td>
+<td style="text-align:right">$0</td>
+<td style="text-align:right">$0</td>
+</tr>
+<tr>
+<td>Total</td>
+<td style="text-align:right">$205</td>
+<td style="text-align:right">$90</td>
+<td style="text-align:right">$10</td>
+</tr>
+</tbody>
+</table>
+<p>Keep the adjustment detail as a related table:</p>
+<table>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Level in this fragment</th>
+<th>Group</th>
+<th>Reason</th>
+<th style="text-align:right">Amount</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VISERA-EXAMPLE-A</td>
+<td>Claim</td>
+<td>CO</td>
+<td>45</td>
+<td style="text-align:right">$25</td>
+</tr>
+<tr>
+<td>VISERA-EXAMPLE-A</td>
+<td>Claim</td>
+<td>PR</td>
+<td>1</td>
+<td style="text-align:right">$10</td>
+</tr>
+<tr>
+<td>VISERA-EXAMPLE-B</td>
+<td>Claim</td>
+<td>CO</td>
+<td>29</td>
+<td style="text-align:right">$80</td>
+</tr>
+</tbody>
+</table>
+<p>That gives a concrete expected result: two claims, three adjustment entries and $90 in claim payments.</p>
+<h2>Check 1: preserve the relationship between a claim and its adjustments</h2>
+<p>The two CAS segments after claim A belong to that claim in this excerpt. The CAS segment after claim B belongs to B.</p>
+<p>A flattened export can accidentally repeat a claim's payment once per adjustment:</p>
+<pre><code class="language-csv">claim,paid,group,reason,adjustment
+VISERA-EXAMPLE-A,90,CO,45,25
+VISERA-EXAMPLE-A,90,PR,1,10
+VISERA-EXAMPLE-B,0,CO,29,80
+</code></pre>
+<p>Summing the <code>paid</code> column now produces $180. Nothing in the remittance paid claim A twice. The export repeated the claim-level value to describe two related adjustments.</p>
+<p>Two related tables avoid that ambiguity. If you need one flat table for review, label repeated claim totals clearly and aggregate payments from one record per claim. Preserve the source transaction and claim references so another reviewer can trace a row back to the remittance.</p>
+<p>The same design question appears with service lines. Adding a service table is not permission to add its payments again to the claim payment total. Decide which level your report is measuring.</p>
+<h2>Check 2: do not add patient responsibility twice</h2>
+<p>For claim A, this example's arithmetic is:</p>
+<pre><code class="language-text">$125 charge = $90 payment + $25 CO adjustment + $10 PR adjustment
+</code></pre>
+<p>The $10 in the CLP patient-responsibility field and the $10 PR adjustment describe the same responsibility amount in this simplified example. Adding both as separate reductions would produce a false $135 explanation of a $125 charge.</p>
+<p>Read group and reason together. X12 identifies CO as contractual obligation and PR as patient responsibility. Its current reason list describes reason 1 as a deductible; reason 45 concerns a charge exceeding an applicable allowance or fee arrangement; reason 29 concerns an expired filing limit. Reason 45 also has usage restrictions, including that its amount must not equal the entire claim or service charge. Our $25 example is smaller than the $125 charge. <a href="https://x12.org/codes/claim-adjustment-group-codes">X12 group codes</a>, <a href="https://x12.org/codes/claim-adjustment-reason-codes">X12 reason codes and usage notes</a>.</p>
+<p>These labels describe the payer's reported adjustment. They are not an instruction to bill a patient, write off a balance or file an appeal. For a real follow-up, read the full remittance, applicable remarks and payer instructions, and check the existing account activity.</p>
+<p>A useful work item would name the claim, the CO/29 combination and the $80 amount, then state what needs investigation. “Please review the denial” leaves the next person guessing.</p>
+<h2>Check 3: keep the claim sum separate from the actual payment</h2>
+<p>Our two claim payments add to $90. That is all this fragment establishes about payment totals.</p>
+<p>It contains no BPR, TRN or PLB segment. We therefore cannot use it to prove a $90 bank deposit or reconcile a complete transaction.</p>
+<p>In a full file, BPR describes payment information and TRN supplies reassociation trace information. Provider-level adjustments may explain differences that do not belong to one current claim. CMS distinguishes service, claim and provider-level adjustments, and separately explains how ERA trace information is used to match the associated payment. <a href="https://www.cms.gov/medicare/coding-billing/electronic-billing/health-care-payment-remittance-advice">CMS remittance overview</a>, <a href="https://www.cms.gov/files/document/electronic-funds-transfer-and-electronic-remittance-advice-transactions.pdf">CMS EFT/ERA basics</a>.</p>
+<p>If your result disagrees with a payment record, first confirm the transaction and reference you are comparing. Look for provider-level adjustments, reversals and additional transactions before forcing a total to match.</p>
+<h2>Practice with a complete synthetic file</h2>
+<p>A small excerpt is useful for checking an interpretation. A complete synthetic file is better for checking an importer, because it can include envelopes, control numbers, payment information and repeatable expected results.</p>
+<p>For each fixture, record the expected claim count, claim payments, adjustment level and any provider-level differences. Then check both the summary and an individual claim. A successful parse does not prove that every identifier, date, code or reconciliation case is handled correctly.</p>
+<p>I work on Visera. Its <a href="https://viseraapp.com/viewer?utm_source=github-article&amp;utm_medium=referral&amp;utm_campaign=growth-20261113">free viewer</a> has a built-in synthetic sample and works without an account. Choose <strong>Try a sample file</strong> to inspect claim payments and adjustment details. This is an optional visual aid; the two tables above can also be checked by hand.</p>
+<p>The companion <a href="https://viseraapp.com/guides/how-to-read-an-835-era-file?utm_source=github-article&amp;utm_medium=referral&amp;utm_campaign=growth-20261113">835 reading guide</a> covers the wider review order. Use the current implementation guide and payer companion guide for production work. Do not share patient files in public comments or email.</p>
+<p>The <a href="https://github.com/focuscarellc/visera-synthetic-835-examples?utm_source=github-article&amp;utm_medium=referral&amp;utm_campaign=growth-20261113">annotated synthetic 835 repository</a> supplies four standalone files and a local validator for this kind of exercise. They cover a fully paid claim, multiple service adjustments, a provider-level adjustment and an unrecognised-patient denial. Every identifier is invented; the checks are not X12 certification.</p>
+<footer><p>Original teaching material from Visera / Focus Care LLC, November 13, 2026. This page documents the synthetic-example repository. It does not accept files, create accounts, or provide payment-posting decisions.</p></footer></main></body></html>
