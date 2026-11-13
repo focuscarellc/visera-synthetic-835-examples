@@ -1,0 +1,72 @@
+{
+  "purpose": "Entirely synthetic teaching fixtures; never submit to a payer.",
+  "created_utc": "2026-11-13",
+  "implementation_identifier": "005010X221A1",
+  "currency": "USD (teaching assumption)",
+  "fixtures": [
+    {
+      "file": "samples/01-single-paid.835",
+      "title": "Single fully paid claim",
+      "expected": {
+        "claims": 1,
+        "service_lines": 1,
+        "charges": "100.00",
+        "claim_payments": "100.00",
+        "cas_adjustments": "0.00",
+        "patient_responsibility": "0.00",
+        "provider_adjustments_net": "0.00",
+        "payment": "100.00"
+      },
+      "transaction_segment_count": 12,
+      "interchange_control": "000000101"
+    },
+    {
+      "file": "samples/02-multi-claim-adjustments.835",
+      "title": "Two claims and three service lines",
+      "expected": {
+        "claims": 2,
+        "service_lines": 3,
+        "charges": "260.00",
+        "claim_payments": "190.00",
+        "cas_adjustments": "70.00",
+        "patient_responsibility": "20.00",
+        "provider_adjustments_net": "0.00",
+        "payment": "190.00"
+      },
+      "transaction_segment_count": 22,
+      "interchange_control": "000000102"
+    },
+    {
+      "file": "samples/03-provider-plb-adjustments.835",
+      "title": "Provider adjustment changes the payment",
+      "expected": {
+        "claims": 1,
+        "service_lines": 1,
+        "charges": "200.00",
+        "claim_payments": "150.00",
+        "cas_adjustments": "50.00",
+        "patient_responsibility": "0.00",
+        "provider_adjustments_net": "20.00",
+        "payment": "130.00"
+      },
+      "transaction_segment_count": 14,
+      "interchange_control": "000000103"
+    },
+    {
+      "file": "samples/04-denied-claim.835",
+      "title": "One denied claim with no payment",
+      "expected": {
+        "claims": 1,
+        "service_lines": 1,
+        "charges": "260.00",
+        "claim_payments": "0.00",
+        "cas_adjustments": "260.00",
+        "patient_responsibility": "0.00",
+        "provider_adjustments_net": "0.00",
+        "payment": "0.00"
+      },
+      "transaction_segment_count": 13,
+      "interchange_control": "000000104"
+    }
+  ]
+}
